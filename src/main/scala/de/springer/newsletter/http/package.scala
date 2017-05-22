@@ -28,7 +28,9 @@ package object http {
     }
 
   def categoryRoute(categoryService: CategoryService): Route = createPostPath(categoryService, "categories")
+
   def bookRoute(bookService: BookService): Route = createPostPath(bookService, "books")
+
   def subscriberRoute(subscriberService: SubscriberService): Route = createPostPath(subscriberService, "subscribers")
 
   def newsletterRoute(newsletterService: NewsletterService): Route =
@@ -47,10 +49,15 @@ package object http {
                           (implicit actorSystem: ActorSystem, mat: Materializer) =
     categoryRoute(categoryService) ~ bookRoute(bookService) ~ subscriberRoute(subscriberService) ~ newsletterRoute(newsletterService)
 
-  def server(categoryService: CategoryService, bookService: BookService, subscriberService: SubscriberService, newsletterService: NewsletterService)
+  def server(categoryService: CategoryService,
+             bookService: BookService,
+             subscriberService: SubscriberService,
+             newsletterService: NewsletterService)
+            (port: Int)
             (implicit actorSystem: ActorSystem, mat: Materializer): Future[Http.ServerBinding] =
-    Http().bindAndHandle(serverRoutes(categoryService, bookService, subscriberService, newsletterService), "0.0.0.0", 8080) map { binding =>
-      println("Server started on port 8080")
+    Http().bindAndHandle(serverRoutes(categoryService, bookService, subscriberService, newsletterService), "0.0.0.0", port) map { binding =>
+      val actualPort = binding.localAddress.getPort
+      println(s"Server started on port $actualPort")
       binding
     }
 
