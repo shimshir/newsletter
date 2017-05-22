@@ -1,18 +1,18 @@
 package de.springer.newsletter.actors
 
 import akka.actor.{Actor, Props}
-import de.springer.newsletter.models.{MaybeIdentifiable, StringId}
 
-class StorageActor[ID <: StringId](createStringId: String => ID) extends Actor {
-  var items: Seq[MaybeIdentifiable[ID]] = Nil
+import scala.reflect.ClassTag
+
+class StorageActor[T: ClassTag] extends Actor {
+  var items: Seq[T] = Nil
 
   import StorageActor.Messages._
 
   def receive: Receive = {
-    case Store(item: MaybeIdentifiable[ID]) =>
-      val id = createStringId(items.size.toString)
-      items = items :+ item.withId(id)
-      sender() ! id
+    case Store(item: T) =>
+      items = items :+ item
+      sender() ! Stored
     case List =>
       sender() ! items
   }
@@ -26,7 +26,9 @@ object StorageActor {
   object Messages {
     case class Store[T](item: T)
     object List
+    trait Stored
+    object Stored extends Stored
   }
 
-  def props[ID <: StringId](createStringId: String => ID) = Props(new StorageActor[ID](createStringId))
+  def props[T: ClassTag] = Props(new StorageActor[T]())
 }

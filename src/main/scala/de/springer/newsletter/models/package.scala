@@ -1,29 +1,30 @@
 package de.springer.newsletter
 
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import spray.json.{DefaultJsonProtocol, RootJsonFormat}
+
 package object models {
-  abstract class StringId {
-    def value: String
-  }
-  trait MaybeIdentifiable[ID <: StringId] {
-    def id: Option[ID]
-    def withId(id: ID): MaybeIdentifiable[ID]
-  }
+  type CategoryId = String
+  type BookId = String
+  type SubscriberId = String
 
-  case class CategoryId(value: String) extends StringId
-  case class Category(id: Option[CategoryId], title: String, superCategoryId: Option[CategoryId])
-    extends MaybeIdentifiable[CategoryId] {
-    def withId(id: CategoryId): MaybeIdentifiable[CategoryId] = this.copy(Some(id))
-  }
+  type CategoryBranch = Seq[Category]
 
-  case class BookId(value: String) extends StringId
-  case class Book(id: Option[BookId], title: String, categoryIds: Seq[CategoryId])
-    extends MaybeIdentifiable[BookId] {
-    def withId(id: BookId): MaybeIdentifiable[BookId] = this.copy(Some(id))
-  }
+  case class Category(id: CategoryId, title: String, superCategoryId: Option[CategoryId])
 
-  case class SubscriberId(value: String) extends StringId
-  case class Subscriber(id: Option[SubscriberId], email: String, categoryIds: Seq[CategoryId])
-    extends MaybeIdentifiable[SubscriberId] {
-    def withId(id: SubscriberId): MaybeIdentifiable[SubscriberId] = this.copy(Some(id))
+  case class Book(id: BookId, title: String, categoryIds: Set[CategoryId])
+
+  case class Subscriber(id: SubscriberId, email: String, categoryIds: Set[CategoryId])
+
+  case class Notification(bookTitle: String, categoryPaths: Set[Seq[CategoryId]])
+  case class Newsletter(email: String, notifications: Set[Notification])
+
+  object JsonProtocols extends SprayJsonSupport with DefaultJsonProtocol {
+    implicit val categoryFormat: RootJsonFormat[Category] = jsonFormat3(Category)
+    implicit val bookFormat: RootJsonFormat[Book] = jsonFormat3(Book)
+    implicit val subscriberFormat: RootJsonFormat[Subscriber] = jsonFormat3(Subscriber)
+
+    implicit val notificationFormat: RootJsonFormat[Notification] = jsonFormat2(Notification)
+    implicit val newsletterFormat: RootJsonFormat[Newsletter] = jsonFormat2(Newsletter)
   }
 }

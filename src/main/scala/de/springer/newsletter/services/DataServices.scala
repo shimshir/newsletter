@@ -11,20 +11,20 @@ import scala.reflect.ClassTag
 
 object DataServices {
 
-  trait DataService[T, ID] {
-    def create(item: T): Future[ID]
+  trait DataService[T] {
+    def create(item: T): Future[Stored]
     def list: Future[Seq[T]]
     def storageActorRef: ActorRef
   }
 
-  class GenericDataService[T : ClassTag, ID : ClassTag](val storageActorRef: ActorRef) extends DataService[T, ID] {
-    def create(item: T): Future[ID] = (storageActorRef ? Store(item))(1.second).mapTo[ID]
+  class GenericDataService[T: ClassTag](val storageActorRef: ActorRef) extends DataService[T] {
+    def create(item: T): Future[Stored] = (storageActorRef ? Store(item))(1.second).mapTo[Stored]
     def list: Future[Seq[T]] = (storageActorRef ? List)(1.second).mapTo[Seq[T]]
   }
 
-  class CategoryService(storageActorRef: ActorRef) extends GenericDataService[Category, CategoryId](storageActorRef)
-  class BookService(storageActorRef: ActorRef) extends GenericDataService[Book, BookId](storageActorRef)
-  class SubscriberService(storageActorRef: ActorRef) extends GenericDataService[Subscriber, SubscriberId](storageActorRef)
+  class CategoryService(storageActorRef: ActorRef) extends GenericDataService[Category](storageActorRef)
+  class BookService(storageActorRef: ActorRef) extends GenericDataService[Book](storageActorRef)
+  class SubscriberService(storageActorRef: ActorRef) extends GenericDataService[Subscriber](storageActorRef)
 }
 
 
