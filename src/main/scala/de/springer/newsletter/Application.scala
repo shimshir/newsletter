@@ -3,6 +3,7 @@ package de.springer.newsletter
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http.ServerBinding
 import akka.stream.ActorMaterializer
+import com.typesafe.scalalogging.LazyLogging
 import de.springer.newsletter.actors.StorageActor
 import de.springer.newsletter.models.{Book, Category, Subscriber}
 import de.springer.newsletter.services.DataServices.{BookService, CategoryService, SubscriberService}
@@ -10,7 +11,7 @@ import de.springer.newsletter.services.NewsletterService
 
 import scala.concurrent.Future
 
-object Application extends App {
+object Application extends App with LazyLogging {
   def start(port: Int): Future[ServerBinding] = {
     implicit val actorSystem = ActorSystem("newsletter-actor-system")
     implicit val mat = ActorMaterializer()
@@ -28,5 +29,6 @@ object Application extends App {
     http.server(categoryService, bookService, subscriberService, newsletterService)(port)
   }
 
+  logger.debug("Starting application")
   start(8080)
 }

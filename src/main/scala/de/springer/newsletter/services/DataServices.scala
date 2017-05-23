@@ -13,13 +13,13 @@ object DataServices {
 
   trait DataService[T] {
     def create(item: T): Future[Stored]
-    def list: Future[Seq[T]]
+    def list: Future[Set[T]]
     def storageActorRef: ActorRef
   }
 
   class GenericDataService[T: ClassTag](val storageActorRef: ActorRef) extends DataService[T] {
     def create(item: T): Future[Stored] = (storageActorRef ? Store(item))(1.second).mapTo[Stored]
-    def list: Future[Seq[T]] = (storageActorRef ? List)(1.second).mapTo[Seq[T]]
+    def list: Future[Set[T]] = (storageActorRef ? List)(1.second).mapTo[Set[T]]
   }
 
   class CategoryService(storageActorRef: ActorRef) extends GenericDataService[Category](storageActorRef)

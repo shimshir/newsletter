@@ -1,24 +1,27 @@
 package de.springer.newsletter.actors
 
 import akka.actor.{Actor, Props}
+import com.typesafe.scalalogging.LazyLogging
 
 import scala.reflect.ClassTag
 
-class StorageActor[T: ClassTag] extends Actor {
-  var items: Seq[T] = Nil
+class StorageActor[T: ClassTag] extends Actor with LazyLogging {
+  var items: Set[T] = Set.empty
 
   import StorageActor.Messages._
 
   def receive: Receive = {
-    case Store(item: T) =>
-      items = items :+ item
+    case msg@Store(item: T) =>
+      logger.trace(s"Received message: $msg")
+      items = items + item
       sender() ! Stored
     case List =>
+      logger.trace(s"Received message: $List")
       sender() ! items
   }
 
   override def unhandled(message: Any): Unit = {
-    println(s"Could not handle message: $message")
+    logger.error(s"Could not handle message: $message")
   }
 }
 

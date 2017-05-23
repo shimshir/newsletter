@@ -14,6 +14,6 @@ class SubscriberServiceSpec extends FlatSpec with Matchers with DataServiceSpec 
     val subscriberStorageActorRef: ActorRef = actorSystem.actorOf(StorageActor.props[Subscriber], "subscriber-test-actor")
     val subscriberService = new SubscriberService(subscriberStorageActorRef)
     val expectedSubscribers = (0 to 9).map(id => Subscriber(id.toString, "title", Set.empty))
-    writeAndRead(subscriberService, expectedSubscribers) should contain only (expectedSubscribers: _*)
+    writeAndRead(subscriberService, expectedSubscribers.toSet) should contain only (expectedSubscribers: _*)
   }
 }

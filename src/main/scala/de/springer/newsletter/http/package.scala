@@ -7,20 +7,26 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.unmarshalling.FromRequestUnmarshaller
 import akka.stream.Materializer
+import com.typesafe.scalalogging.LazyLogging
 import de.springer.newsletter.services.DataServices.{BookService, CategoryService, DataService, SubscriberService}
 import de.springer.newsletter.services.NewsletterService
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
-import models.JsonProtocols._
 
-package object http {
+import sext._
+
+package object http extends LazyLogging {
+  import de.springer.newsletter.models.JsonProtocols._
+
   private def createPostPath[T](dataService: DataService[T], pathValue: String)
                                (implicit um: FromRequestUnmarshaller[T]) =
     path(pathValue) {
       post {
         entity(as[T]) { item =>
+          logger.debug(s"Received POST /$pathValue with body:\n${item.getClass.getSimpleName}\n${item.valueTreeString}")
           onSuccess(dataService.create(item)) { stored =>
+            logger.debug(s"Returning status ${Created.toString}")
             complete(Created)
           }
         }
@@ -36,7 +42,9 @@ package object http {
   def newsletterRoute(newsletterService: NewsletterService): Route =
     path("newsletters") {
       get {
+        logger.debug(s"Received GET /newsletters")
         onSuccess(newsletterService.createNewsletters()) { newsletters =>
+          logger.debug(s"Returning ${newsletters.size} newsletters")
           complete(OK, newsletters)
         }
       }
@@ -54,11 +62,14 @@ package object http {
              subscriberService: SubscriberService,
              newsletterService: NewsletterService)
             (port: Int)
-            (implicit actorSystem: ActorSystem, mat: Materializer): Future[Http.ServerBinding] =
+            (implicit actorSystem: ActorSystem, mat: Materializer): Future[Http.ServerBinding] = {
+    logger.debug(s"Starting server on port $port")
     Http().bindAndHandle(serverRoutes(categoryService, bookService, subscriberService, newsletterService), "0.0.0.0", port) map { binding =>
       val actualPort = binding.localAddress.getPort
-      println(s"Server started on port $actualPort")
+      logger.info(s"Server started on port $actualPort")
       binding
     }
+  }
+
 
 }

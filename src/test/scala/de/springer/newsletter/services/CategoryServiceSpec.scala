@@ -15,6 +15,6 @@ class CategoryServiceSpec extends FlatSpec with Matchers with DataServiceSpec {
     val categoryStorageActorRef: ActorRef = actorSystem.actorOf(StorageActor.props[Category], "category-test-actor")
     val categoryService = new CategoryService(categoryStorageActorRef)
     val expectedCategories = (0 to 9).map(id => Category(id.toString, "title", None))
-    writeAndRead(categoryService, expectedCategories) should contain only (expectedCategories: _*)
+    writeAndRead(categoryService, expectedCategories.toSet) should contain only (expectedCategories: _*)
   }
 }

@@ -15,6 +15,6 @@ class BookServiceSpec extends FlatSpec with Matchers with DataServiceSpec {
     val bookStorageActorRef: ActorRef = actorSystem.actorOf(StorageActor.props[Book], "book-test-actor")
     val bookService = new BookService(bookStorageActorRef)
     val expectedBooks = (0 to 9).map(id => Book(id.toString, "title", Set.empty))
-    writeAndRead(bookService, expectedBooks) should contain only (expectedBooks: _*)
+    writeAndRead(bookService, expectedBooks.toSet) should contain only(expectedBooks: _*)
   }
 }

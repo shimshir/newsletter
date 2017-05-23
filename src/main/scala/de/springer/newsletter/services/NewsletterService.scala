@@ -1,11 +1,11 @@
 package de.springer.newsletter.services
 
+import com.typesafe.scalalogging.LazyLogging
 import de.springer.newsletter.models._
 import de.springer.newsletter.services.DataServices.{BookService, CategoryService, SubscriberService}
 
 import scala.annotation.tailrec
 import scala.concurrent.Future
-
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class NewsletterService(categoryService: CategoryService, bookService: BookService, subscriberService: SubscriberService) {
@@ -15,17 +15,21 @@ class NewsletterService(categoryService: CategoryService, bookService: BookServi
       books <- bookService.list
       subscribers <- subscriberService.list
     } yield {
-      NewsletterService.createNewsletters(categories.toSet, books.toSet, subscribers.toSet)
+      NewsletterService.createNewsletters(categories, books, subscribers)
     }
   }
 }
 
-object NewsletterService {
+object NewsletterService extends LazyLogging {
   def createNewsletters(categories: Set[Category], books: Set[Book], subscribers: Set[Subscriber]): Set[Newsletter] = {
+    logger.info("Creating newsletters")
     val newsletters: Set[Newsletter] = subscribers map { subscriber =>
       val categoriesOfInterest = subscriber.categoryIds.flatMap(catId => catId2Cat(catId, categories))
       val rootBranches: Set[CategoryBranch] = categoriesOfInterest.map(Seq(_))
+
+      logger.debug("Creating category branches")
       val categoryBranches: Set[CategoryBranch] = createCategoryBranches(rootBranches, categories)
+      logger.debug(s"Got ${categoryBranches.size} branches")
 
       val notifications: Set[Notification] = books map { book =>
         val bookCategories: Set[Category] = book.categoryIds.flatMap(catId => catId2Cat(catId, categories))
@@ -40,6 +44,7 @@ object NewsletterService {
       Newsletter(subscriber.email, nonEmptyNotifications)
     }
     val nonEmptyNewsletters = newsletters.filter(_.notifications.nonEmpty)
+    logger.info(s"Returning ${nonEmptyNewsletters.size} newsletters")
     nonEmptyNewsletters
   }
 
@@ -55,9 +60,9 @@ object NewsletterService {
       }
     )
 
-    if (newBranches == branches)
+    if (newBranches == branches) {
       branches
-    else
+    } else
       createCategoryBranches(newBranches, categories)
   }
 }
