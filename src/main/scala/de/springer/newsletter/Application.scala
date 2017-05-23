@@ -30,5 +30,5 @@ object Application extends App with LazyLogging {
   }
 
   logger.debug("Starting application")
-  start(8080)
+  start(port = 8080)
 }
