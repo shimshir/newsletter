@@ -1,11 +1,13 @@
 package de.springer.newsletter.actors
 
 import akka.actor.{Actor, Props}
-import com.typesafe.scalalogging.LazyLogging
+import com.typesafe.scalalogging.Logger
 
 import scala.reflect.ClassTag
 
-class StorageActor[T: ClassTag] extends Actor with LazyLogging {
+class StorageActor[T: ClassTag] extends Actor {
+  val logger = Logger(s"${getClass.getName}[${implicitly[ClassTag[T]].runtimeClass.getSimpleName}]")
+
   var items: Set[T] = Set.empty
 
   import StorageActor.Messages._
@@ -16,7 +18,7 @@ class StorageActor[T: ClassTag] extends Actor with LazyLogging {
       items = items + item
       sender() ! Stored
     case List =>
-      logger.trace(s"Received message: $List")
+      logger.trace("Received message: List")
       sender() ! items
   }
 
@@ -33,5 +35,5 @@ object StorageActor {
     object Stored extends Stored
   }
 
-  def props[T: ClassTag] = Props(new StorageActor[T]())
+  def props[T: ClassTag]: Props = Props(new StorageActor[T]())
 }

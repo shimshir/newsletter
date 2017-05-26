@@ -43,9 +43,20 @@ package object http extends LazyLogging {
     path("newsletters") {
       get {
         logger.debug(s"Received GET /newsletters")
-        onSuccess(newsletterService.createNewsletters()) { newsletters =>
+        onSuccess(newsletterService.newsletters) { newsletters =>
           logger.debug(s"Returning ${newsletters.size} newsletters")
           complete(OK, newsletters)
+        }
+      }
+    }
+
+  def categorizedBooksRoute(newsletterService: NewsletterService): Route =
+    path("categorized-books") {
+      get {
+        logger.debug(s"Received GET /categorized-books")
+        onSuccess(newsletterService.categorizedBooks) { categorizedBooksTree =>
+          logger.debug(s"Returning categorizedBooks")
+          complete(OK, categorizedBooksTree)
         }
       }
     }
@@ -55,7 +66,11 @@ package object http extends LazyLogging {
                            subscriberService: SubscriberService,
                            newsletterService: NewsletterService)
                           (implicit actorSystem: ActorSystem, mat: Materializer) =
-    categoryRoute(categoryService) ~ bookRoute(bookService) ~ subscriberRoute(subscriberService) ~ newsletterRoute(newsletterService)
+    categoryRoute(categoryService) ~
+      bookRoute(bookService) ~
+      subscriberRoute(subscriberService) ~
+      newsletterRoute(newsletterService) ~
+      categorizedBooksRoute(newsletterService)
 
   def server(categoryService: CategoryService,
              bookService: BookService,

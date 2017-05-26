@@ -2,8 +2,9 @@ package de.springer.newsletter.http
 
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import de.springer.newsletter.Commons
 import de.springer.newsletter.actors.StorageActor.Messages.Stored
-import de.springer.newsletter.models.{Book, Category, Newsletter, Subscriber}
+import de.springer.newsletter.models._
 import org.scalatest._
 import spray.json._
 import org.mockito.Mockito._
@@ -31,7 +32,7 @@ class RoutesSpec extends FlatSpec with Matchers with MockitoSugar with Scalatest
   "POST /books" should "create a book" in {
     when(mockBookService.create(any())).thenReturn(Future.successful(Stored))
 
-    postRequest("/books", Book("bookId", "Britney Spears' Heart to Heart", Set.empty)) ~>
+    postRequest("/books", Book("Britney Spears' Heart to Heart", Set.empty)) ~>
       bookRoute(mockBookService) ~> check {
       status shouldEqual StatusCodes.Created
     }
@@ -40,19 +41,29 @@ class RoutesSpec extends FlatSpec with Matchers with MockitoSugar with Scalatest
   "POST /subscribers" should "create a subscriber" in {
     when(mockSubscriberService.create(any())).thenReturn(Future.successful(Stored))
 
-    postRequest("/subscribers", Subscriber("britney", "britney@spears.com", Set.empty)) ~>
+    postRequest("/subscribers", Subscriber("britney@spears.com", Set.empty)) ~>
       subscriberRoute(mockSubscriberService) ~> check {
       status shouldEqual StatusCodes.Created
     }
   }
 
   "GET /newsletters" should "return newsletters" in {
-    val stubNewsletters = Set(Newsletter("email@email.em", Set.empty))
-    when(mockNewsletterService.createNewsletters()).thenReturn(Future.successful(stubNewsletters))
+    val stubNewsletters = Commons.exampleNewsletters
+    when(mockNewsletterService.newsletters).thenReturn(Future.successful(stubNewsletters))
 
     Get("/newsletters") ~> newsletterRoute(mockNewsletterService) ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[Set[Newsletter]] shouldEqual stubNewsletters
+    }
+  }
+
+  "GET /categorized-books" should "return categorized books" in {
+    val stubCategorizedBooks = CategorizedBooksTree(childTrees = Commons.exampleCategorizedBooksTrees)
+    when(mockNewsletterService.categorizedBooks).thenReturn(Future.successful(stubCategorizedBooks))
+
+    Get("/categorized-books") ~> categorizedBooksRoute(mockNewsletterService) ~> check {
+      status shouldEqual StatusCodes.OK
+      responseAs[CategorizedBooksTree] shouldEqual stubCategorizedBooks
     }
   }
 

@@ -7,7 +7,7 @@ scalaVersion := "2.12.2"
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http" % "10.0.6",
   "com.typesafe.akka" %% "akka-http-spray-json" % "10.0.6",
-  "io.spray" %%  "spray-json" % "1.3.3",
+  "io.spray" %% "spray-json" % "1.3.3",
   "ch.qos.logback" % "logback-classic" % "1.1.7",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
   "com.github.nikita-volkov" % "sext" % "0.2.4",
@@ -18,5 +18,9 @@ libraryDependencies ++= Seq(
 
 enablePlugins(JavaAppPackaging)
 
+siteSourceDirectory := target.value / "scala-2.12" / "scoverage-report"
+
 coverageMinimum := 80
 coverageFailOnMinimum := false
+
+addCommandAlias("showCoverage", "; coverage ; test ; coverageReport ; previewSite")

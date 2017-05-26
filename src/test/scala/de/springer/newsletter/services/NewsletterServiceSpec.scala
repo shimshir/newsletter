@@ -1,60 +1,29 @@
 package de.springer.newsletter.services
 
+import de.springer.newsletter.Commons
 import de.springer.newsletter.models._
+import de.springer.newsletter.services.DataServices.{BookService, CategoryService, SubscriberService}
 import org.scalatest._
+import org.scalatest.mockito.MockitoSugar
+import org.mockito.Mockito._
 
-class NewsletterServiceSpec extends FlatSpec with Matchers {
-  val science = Category("science", "Science", None)
-  val engineering = Category("engineering", "Engineering", Some("science"))
-  val electronics = Category("electronics", "Electronics", Some("engineering"))
-  val software = Category("software", "Software", Some("engineering"))
-  val fp = Category("fp", "Functional Programming", Some("software"))
-  val oop = Category("oop", "Object Oriented Programming", Some("software"))
-  val physics = Category("physics", "Physics", Some("science"))
-  val mechanics = Category("mechanics", "Mechanics", Some("physics"))
-  val thermodynamics = Category("thermodynamics", "Thermodynamics", Some("physics"))
+import scala.concurrent.{Await, Future}
+import scala.concurrent.duration._
 
-  val categories = Set(
-    science,
-    engineering,
-    electronics,
-    software,
-    fp,
-    oop,
-    physics,
-    mechanics,
-    thermodynamics
-  )
 
-  val heatAndThermo = Book("1", "Heat and Thermodynamics", Set("thermodynamics"))
-  val engAndThermo = Book("2", "Engineering and Thermodynamics", Set("thermodynamics", "engineering"))
-  val principlesOfAnalogElec = Book("3", "Principles of Analog Electronics", Set("electronics"))
-  val genPhysics = Book("4", "General Physics", Set("physics"))
-  val mechSoftSys = Book("5", "Mechatronic Software Systems", Set("mechanics", "software", "electronics"))
-  val funcProgScala = Book("6", "Functional Programming in Scala", Set("fp"))
+class NewsletterServiceSpec extends FlatSpec with Matchers with MockitoSugar with BeforeAndAfterAll {
 
-  val books = Set(
-    heatAndThermo,
-    engAndThermo,
-    principlesOfAnalogElec,
-    genPhysics,
-    mechSoftSys,
-    funcProgScala
-  )
+  import de.springer.newsletter.stubs.StubData._
 
-  val subA = Subscriber("1", "a@a.a", Set("science"))
-  val subB = Subscriber("2", "b@b.b", Set("physics", "fp"))
-  val subC = Subscriber("3", "c@c.c", Set("thermodynamics", "mechanics"))
-  val subD = Subscriber("4", "d@d.d", Set("oop"))
-  val subE = Subscriber("5", "e@e.e", Set("electronics"))
+  val mockCategoryService = mock[CategoryService]
+  val mockBookService = mock[BookService]
+  val mockSubscriberService = mock[SubscriberService]
 
-  val subscribers = Set(
-    subA,
-    subB,
-    subC,
-    subD,
-    subE
-  )
+  override def beforeAll() {
+    when(mockCategoryService.list).thenReturn(Future.successful(categories))
+    when(mockBookService.list).thenReturn(Future.successful(books))
+    when(mockSubscriberService.list).thenReturn(Future.successful(subscribers))
+  }
 
   "createCategoryBranches" should "build category branches for provided root category" in {
     val initialScienceBranches: Set[CategoryBranch] = Set(Seq(science))
@@ -99,53 +68,16 @@ class NewsletterServiceSpec extends FlatSpec with Matchers {
   }
 
   "createNewsletters" should "create a list of newsletters according to stored categories, books and subscribers" in {
-    val newsletters = NewsletterService.createNewsletters(categories, books, subscribers)
-    newsletters shouldEqual expectedNewsletters
+    val newsletterService = new NewsletterService(mockCategoryService, mockBookService, mockSubscriberService)
+    val newslettersFut = newsletterService.newsletters
+    val newsletters = Await.result(newslettersFut, 1.second)
+    newsletters shouldEqual Commons.exampleNewsletters
   }
 
-  val expectedNewsletters = Set(
-    Newsletter(
-      subA.email,
-      Set(
-        Notification(heatAndThermo.title, Set(Seq(science.id, physics.id, thermodynamics.id))),
-        Notification(engAndThermo.title, Set(
-          Seq(science.id, physics.id, thermodynamics.id),
-          Seq(science.id, engineering.id))
-        ),
-        Notification(principlesOfAnalogElec.title, Set(Seq(science.id, engineering.id, electronics.id))),
-        Notification(genPhysics.title, Set(Seq(science.id, physics.id))),
-        Notification(mechSoftSys.title, Set(
-          Seq(science.id, physics.id, mechanics.id),
-          Seq(science.id, engineering.id, software.id),
-          Seq(science.id, engineering.id, electronics.id))
-        ),
-        Notification(funcProgScala.title, Set(Seq(science.id, engineering.id, software.id, fp.id)))
-      )
-    ),
-    Newsletter(
-      subB.email,
-      Set(
-        Notification(heatAndThermo.title, Set(Seq(physics.id, thermodynamics.id))),
-        Notification(engAndThermo.title, Set(Seq(physics.id, thermodynamics.id))),
-        Notification(genPhysics.title, Set(Seq(physics.id))),
-        Notification(mechSoftSys.title, Set(Seq(physics.id, mechanics.id))),
-        Notification(funcProgScala.title, Set(Seq(fp.id)))
-      )
-    ),
-    Newsletter(
-      subC.email,
-      Set(
-        Notification(heatAndThermo.title, Set(Seq(thermodynamics.id))),
-        Notification(engAndThermo.title, Set(Seq(thermodynamics.id))),
-        Notification(mechSoftSys.title, Set(Seq(mechanics.id)))
-      )
-    ),
-    Newsletter(
-      subE.email,
-      Set(
-        Notification(principlesOfAnalogElec.title, Set(Seq(electronics.id))),
-        Notification(mechSoftSys.title, Set(Seq(electronics.id)))
-      )
-    )
-  )
+  "createCategorizedBooksTrees" should "create a tree structure containing categories with books and subcategories" in {
+    val newsletterService = new NewsletterService(mockCategoryService, mockBookService, mockSubscriberService)
+    val categorizedBooksTreeFut = newsletterService.categorizedBooks
+    val categorizedBooksTree = Await.result(categorizedBooksTreeFut, 1.second)
+    categorizedBooksTree.childTrees shouldEqual Commons.exampleCategorizedBooksTrees
+  }
 }

@@ -26,6 +26,11 @@ object Application extends App with LazyLogging {
 
     val newsletterService = new NewsletterService(categoryService, bookService, subscriberService)
 
+    import de.springer.newsletter.stubs.StubData._
+    categories.foreach(categoryService.create)
+    books.foreach(bookService.create)
+    subscribers.foreach(subscriberService.create)
+
     http.server(categoryService, bookService, subscriberService, newsletterService)(port)
   }
 
