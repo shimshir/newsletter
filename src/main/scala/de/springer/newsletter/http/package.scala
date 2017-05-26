@@ -11,9 +11,7 @@ import com.typesafe.scalalogging.LazyLogging
 import de.springer.newsletter.services.DataServices.{BookService, CategoryService, DataService, SubscriberService}
 import de.springer.newsletter.services.NewsletterService
 
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
-
+import scala.concurrent.{ExecutionContext, Future}
 import sext._
 
 package object http extends LazyLogging {
@@ -77,7 +75,7 @@ package object http extends LazyLogging {
              subscriberService: SubscriberService,
              newsletterService: NewsletterService)
             (port: Int)
-            (implicit actorSystem: ActorSystem, mat: Materializer): Future[Http.ServerBinding] = {
+            (implicit actorSystem: ActorSystem, mat: Materializer, ec: ExecutionContext): Future[Http.ServerBinding] = {
     logger.debug(s"Starting server on port $port")
     Http().bindAndHandle(serverRoutes(categoryService, bookService, subscriberService, newsletterService), "0.0.0.0", port) map { binding =>
       val actualPort = binding.localAddress.getPort

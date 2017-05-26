@@ -15,6 +15,8 @@ object Application extends App with LazyLogging {
   def start(port: Int): Future[ServerBinding] = {
     implicit val actorSystem = ActorSystem("newsletter-actor-system")
     implicit val mat = ActorMaterializer()
+    implicit val ec = actorSystem.dispatcher
+
     val categoryStorageActorRef = actorSystem.actorOf(StorageActor.props[Category], "category-storage-actor")
     val categoryService = new CategoryService(categoryStorageActorRef)
 

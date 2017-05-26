@@ -5,10 +5,12 @@ import de.springer.newsletter.models._
 import de.springer.newsletter.services.DataServices.{BookService, CategoryService, SubscriberService}
 
 import scala.annotation.tailrec
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, Future}
 
-class NewsletterService(categoryService: CategoryService, bookService: BookService, subscriberService: SubscriberService) {
+class NewsletterService(categoryService: CategoryService,
+                        bookService: BookService,
+                        subscriberService: SubscriberService)
+                       (implicit ec: ExecutionContext) {
   def newsletters: Future[Set[Newsletter]] = {
     for {
       categories <- categoryService.list
